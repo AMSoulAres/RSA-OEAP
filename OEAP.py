@@ -148,7 +148,7 @@ class OEAP():
 
 if __name__ == "__main__":
     oeap = OEAP(key_size=2048)
-    message = b'Hello, World!'
+    message = b'Testinho testando o OEAP'
     print("Original message:", message)
 
     encoded = oeap.encode(data=message)
