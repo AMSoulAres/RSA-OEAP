@@ -102,8 +102,6 @@ class SHA3_256():
 
 
 def mutate_random_char(s: str) -> str:
-    """Retorna uma nova string igual a s, exceto 1 caractere aleatório trocado por
-    uma letra ASCII (maiúscula/minúscula)."""
     s=str(s)
     if not s:
         return s
@@ -149,11 +147,10 @@ if __name__ == "__main__":
     # Decriptando a mensagem
     decrypted_message = rsa_oeap.decrypt(decoded_int)
     print("Mensagem Decriptada:", decrypted_message)    
-    # 
+    # Confere se está correto
     msg_part, hash_part = decrypted_message.split("|", 1)
     sha3_new = SHA3_256()
     hash_new = sha3_new.get_hash(msg_part)
-    print(msg_part,hash_new,"ueee")
     print("SHA3-256 calculado:", hash_new)
     print("SHA3-256 recebido:", hash_part)
     if hash_part == hash_new:

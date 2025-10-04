@@ -1,6 +1,6 @@
 # RSA-OAEP Implementation
 
-Projeto para Universidade de Brasília com implementação completa de RSA-OAEP (Optimal Asymmetric Encryption Padding) para criptografia segura de mensagens.
+Projeto para Universidade de Brasília com implementação completa de RSA-OAEP (Optimal Asymmetric Encryption Padding) para criptografia segura de mensagens e SHA3 (Secure Hash algorithm 3) para assinatura digital.
 
 ## Classes Implementadas
 
@@ -33,7 +33,7 @@ Implementação do esquema de preenchimento OAEP conforme RFC 3447:
 - `decode(em, label=b'')`: Remove padding e recupera dados originais
 - `mgf1(seed, maskLen)`: Função de geração de máscara
 
-### 3. Classe `RSA_OAEP` (RSA-OEAP.py)
+### 3. Classe `RSA_OAEP` (RSA_OEAP.py)
 
 Classe integrada que combina RSA com OAEP para criptografia segura:
 
@@ -46,12 +46,25 @@ Classe integrada que combina RSA com OAEP para criptografia segura:
 - `encrypt(plaintext)`: Criptografia segura com padding OAEP
 - `decrypt(ciphertext)`: Descriptografia segura removendo padding
 
+### 4. Classe `SHA3_256` (SHA_3.py)
+
+Implementação do hash sha256 de acordo com FIPS PUB 202:
+
+- **Ajuste de padding**: Ajusta o tamanho da mensagem para o tamanho do bloco
+- **Constantes de deslocamento e rounds**: Utiliza matriz de números triangulares
+
+**Métodos principais:**
+- `get_hash()`: Retorna em bytes o hash com 64 caracteres UTF-8
+- `_absorb(block)`: Recebe um bloco de no máximo 135 caracteres UTF-8
+- `_permute()`: Realiza os 24 hounds com as manipulações de matriz
+
 ## Como Executar
 
 ### Requisitos
 - Python 3.6+
 - Biblioteca `hashlib` (padrão)
 - Biblioteca `os` (padrão)
+- Biblioteca `struct` (padrão)
 
 ### Execução Rápida
 
@@ -119,12 +132,68 @@ print(f"Texto original: {decrypted}")
 
 ### Fluxo de Criptografia
 ```
-Mensagem → UTF-8 → OAEP Encoding → RSA Encryption → Ciphertext
+Mensagem → UTF-8 → OAEP Encoding → RSA Encryption → Ciphertext 
 ```
 
 ### Fluxo de Descriptografia
 ```
 Ciphertext → RSA Decryption → OAEP Decoding → UTF-8 → Mensagem
+```
+
+### Execução Rápida Para SHA256
+
+Execute o arquivo principal para ver uma demonstração:
+
+```bash
+python3 SHA_3.py
+```
+
+### Uso Programático
+
+#### Exemplo Básico
+
+```python
+from RSA_OEAP import RSA_OAEP
+
+# Texto de exemplo
+msg = "Mensagem de teste para RSA com OAEP com SHA-3"
+
+# Cria uma instância do SHA3 e obtem o hash único de acordo com a mensagem
+sha3 = SHA3_256()
+hash = sha3.get_hash(msg)
+print("SHA3-256:", hash)
+
+# Junte o hash com a mensagem com um caractere que permite separar depois
+msg_hash = msg + "|" + hash
+
+# Enviada a mensagem; Do lado do receptor separa a mensagem do hash
+msg_part, hash_part = decrypted_message.split("|", 1)
+
+# Obetenha o hash do texto recebido
+sha3_new = SHA3_256()
+hash_new = sha3_new.get_hash(msg_part)
+print("SHA3-256 calculado:", hash_new)
+print("SHA3-256 recebido:", hash_part)
+
+# Compare se o hash calculado é igual ao recebido
+if hash_part == hash_new:
+    print("Mensagem recebida está integra")
+```
+
+## Estrutura Técnica
+
+### Fluxo de Hashing
+```
+Mensagem → UTF-8 → Padding →  Absorve → Permuta → Formatação → Hash
+```
+
+## Fluxo completo
+```
+Cripto: Mensagem → UTF-8 → OAEP Encoding → RSA Encryption → Ciphertext 
+Hash: Mensagem → UTF-8 → Padding →  Absorve → Permuta → Formatação → Hash
+Assinatura Digital (sender): Mensagem → Cripto(Mensagem+Hash) → Base64
+Assinatura Digital (receive): Base64 → Descripto → Mensagem+Hash → VerificarHash 
+Base64 → Ciphertext → RSA Decryption → OAEP Decoding → UTF-8 → Mensagem
 ```
 
 ## Desenvolvimento Futuro
@@ -139,7 +208,10 @@ Ciphertext → RSA Decryption → OAEP Decoding → UTF-8 → Mensagem
 3. [RSA Cryptosystem](https://en.wikipedia.org/wiki/RSA_cryptosystem)
 4. [RFC 3447 - PKCS #1 v2.1](https://tools.ietf.org/html/rfc3447)
 5. [Miller-Rabin Primality Test](https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test)
-
+6. []
 ## Licença
 
 Este projeto está licenciado sob os termos especificados no arquivo LICENSE.
+
+
+
