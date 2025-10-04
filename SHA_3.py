@@ -90,7 +90,7 @@ class SHA3_256():
             self._absorb(block)
             self._permute()
         hash_hex = self.digest().hex()
-        return self.hex_to_base64(hash_hex)
+        return hash_hex
 
     def digest(self):
         """Retorna o hash como bytes"""
@@ -100,11 +100,6 @@ class SHA3_256():
                 output.extend(struct.pack("<Q", val))
         return bytes(output[:32])  # SHA3-256 → 32 bytes
 
-    def hex_to_base64(self, hex_str: str) -> str:
-        return base64.b64encode(bytes.fromhex(hex_str)).decode('ascii')
-
-    def base64_to_hex(self, b64_str: str) -> str:
-        return base64.b64decode(b64_str).hex()
 
 def mutate_random_char(s: str) -> str:
     """Retorna uma nova string igual a s, exceto 1 caractere aleatório trocado por
@@ -125,31 +120,42 @@ if __name__ == "__main__":
     msg = "Mensagem de teste para RSA com OAEP com SHA-3"
     sha3 = SHA3_256()
     hash = sha3.get_hash(msg)
-    print("SHA3-256:", sha3.base64_to_hex(hash))
-    print("SHA3-256 na BASE64:", hash)
+    print("SHA3-256:", hash)
     msg_hash = msg + "|" + hash
 
-    print("Mensagem Original:", msg_hash)
+    print("Mensagem Original com hash:", msg_hash)
     ciphertext = rsa_oeap.encrypt(msg_hash)
+    cipher_bytes = ciphertext.to_bytes((ciphertext.bit_length() + 7) // 8, 'big')
+    cipherbase64 = base64.b64encode(cipher_bytes).decode('utf-8')
+    # Com alteração no caminho
     cipher_alt = mutate_random_char(ciphertext)
+    cipher_bytes_alt = ciphertext.to_bytes((ciphertext.bit_length() + 7) // 8, 'big')
+    cipherbase64alt = base64.b64encode(cipher_bytes_alt).decode('utf-8')
     """ ^^^ Bob"""
-    print("Ciphertext:", ciphertext)
-    print("Ciphertext com alteração:", cipher_alt)  # Trudy
 
-    decrypted_message = rsa_oeap.decrypt(ciphertext)
-    try:
-        decrypted_message = rsa_oeap.decrypt(cipher_alt)    # Da erro poor ter sido alterado
-    except:
-        print("Erro ao decriptar mensagem com alteração")
+    print("Ciphertext na base64:", cipherbase64)
+    print("Ciphertext com alteração e base64:", cipherbase64alt)  # Trudy
 
-    print("Mensagem Decriptada:", decrypted_message)    
+    #
+    #try:
+    #    decrypted_message = rsa_oeap.decrypt(cipher_alt)    # Da erro poor ter sido alterado
+    #except:
+    #    print("Erro ao decriptar mensagem com alteração")
+
     """ ↓↓↓ Alice """
+    #Voltando de base64 para int
+    ciphertext_new = base64.b64decode(cipherbase64)
+    decoded_int = int.from_bytes(ciphertext_new, 'big')
+    # Decriptando a mensagem
+    decrypted_message = rsa_oeap.decrypt(decoded_int)
+    print("Mensagem Decriptada:", decrypted_message)    
+    # 
     msg_part, hash_part = decrypted_message.split("|", 1)
     sha3_new = SHA3_256()
     hash_new = sha3_new.get_hash(msg_part)
     print(msg_part,hash_new,"ueee")
-    print("SHA3-256 calculado:", sha3.base64_to_hex(hash_new))
-    print("SHA3-256 na BASE64 recebido:", hash_part)
+    print("SHA3-256 calculado:", hash_new)
+    print("SHA3-256 recebido:", hash_part)
     if hash_part == hash_new:
         print("Mensagem recebida está integra")
 
